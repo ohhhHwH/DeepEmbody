@@ -1,20 +1,3 @@
-# Memory
-
-Stores information across and during tasks. Can include:
-
-- JIT prompts
-- World model fragments (object location, room map)
-- Short-term memory (task context, intermediate results)
-- Long-term skill usage patterns
-
-Memory enables contextual reasoning, personalization, and short-term task coherence.
-
-
-
-
-add memory node in memory.py as follow:
-
-```python
 # 根节点：智能体本体
     node1_id = mg.add_node(NodeType.FIXED, NodeClass.CONTEXT, "embody ai assistant", "作为具身智能助手")
 
@@ -128,18 +111,3 @@ add memory node in memory.py as follow:
 
     node28_id = mg.add_node(NodeType.LONG_TERM, NodeClass.TIME, "action:start_charge", "我开始充电", 
                         parent_id=node25_id)
-```
-
-
-
-Memory TODO list:
-
-memory exchange, short-term memory to long-term memory conversion
-Integrate with LLM
-LLM output structuring and visualization
-Structuring and unstructuring
-Real-world/Simulation
-Implementation
-Parallelization
-Retrieval
-

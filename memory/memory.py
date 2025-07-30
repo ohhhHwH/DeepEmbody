@@ -6,6 +6,8 @@ from typing import List, Optional, Dict
 from dataclasses import dataclass
 import itertools
 from enum import IntEnum
+import json
+from collections import deque
 
 class NodeType(IntEnum):
     SHORT_TERM = 0   # short-term memory
@@ -27,7 +29,7 @@ class MemoryNode:
     summary: str = "" # Summary of the node and its immediate child nodes - GPT summary / A has a1 a2 a3
     parent_id: int = -1 # Parent node ID
     weight: float = 1.0 # Node weight. Less than 0 indicates an error node?
-    has_child: bool = False # Has child nodes
+    child_cnt: int = 0 # Has child nodes
     parents_cnt: int = 0 # Number of parent nodes
 
     # embedding: np.ndarray # Stored in a separate graph
@@ -44,6 +46,7 @@ class MemoryGraph:
         self.max_id = max_id  # max ID
         self.time_threshold = 3600  # short-term memory forgetting threshold in seconds
         self._node_map = {} # auxiliary index to store nodes by ID 
+        
     def forget_node(self)-> bool:
         # Short-term memory forgetting logic
         # Implement timestamp-based forgetting strategy
@@ -72,8 +75,11 @@ class MemoryGraph:
     def add_node(self, node_type: NodeType, node_class: NodeClass,
                     name: str, summary: str,
                     parent_id: int = -1,
-                    timestamp: float = -1.0, weight: float = 1.0,
-                    has_child: bool = False, ordered: bool = False,
+                    timestamp: int = -1.0,
+                    weight: float = 1.0,
+                    child_cnt: int = 0,
+                    parents_cnt: int = 0,
+                    # ordered: bool = False,
                     x: float = 0.0, y: float = 0.0, z: float = 0.0) -> int:
         # Add a node to the graph
         if node_type not in [0, 1, 2]:
@@ -89,15 +95,31 @@ class MemoryGraph:
             summary=summary,
             parent_id=parent_id,
             weight=weight,
-            has_child=has_child,
-            parents_cnt=1
+            child_cnt=child_cnt,
+            parents_cnt=parents_cnt
         )
 
         # Add to the graph
         self.G.add_node(node_id, **node.__dict__)
-        if node_class == NodeClass.TIME and node_type == NodeType.SHORT_TERM :
+
+
+        # add level information
+        self.G.nodes[node_id]['level'] = 0
+        if parent_id != -1:
+            self.G.nodes[node_id]['level'] = self.G.nodes[parent_id]['level'] + 1
+
+        if node_class == NodeClass.TIME :
             # If it is a short-term time node, set it as ordered
+            # get the parent node's child count and update the parent's child count status
+            if timestamp < 0:
+                timestamp = self.get_child_num(parent_id) + 1
+                # update the parent node's child count
+                self.update_node(parent_id, child_cnt=timestamp)
             self.G.nodes[node_id]['timestamp'] = timestamp
+
+        if node_class == NodeClass.CONTEXT and node_type == NodeType.SHORT_TERM :
+            # If it is a short-term node, set the timestamp
+            self.G.nodes[node_id]['timestamp'] = timestamp if timestamp >= 0 else np.datetime64('now')
 
         if node_class == NodeClass.SPACE:
             # If it is a spatial node, set coordinates
@@ -107,17 +129,25 @@ class MemoryGraph:
 
         # Update auxiliary indexes
         self._node_map[node_id] = node
-        # Update parent-child relationships
-        if parent_id != -1:
+        # Update parent-child relationships when initial node
+        if parent_id != -1 and child_cnt == 0 and parents_cnt == 0:
             self.add_child(parent_id, node_id)
+        elif parent_id != -1:
+            self.G.add_edge(parent_id, node_id)
         return node_id
 
+    def get_child_num(self, node_id: int) -> int:
+        # Get the number of child nodes for a given node
+        if node_id in self._node_map:
+            return self._node_map[node_id].child_cnt
+        return 0
+
     def delete_node(self, node_id: int):
-        # Delete the node and its associated relationships
+        # Delete the node and its associated relationships TODO ONLY check the CONTEXT node
         if node_id in self._node_map:
             node = self._node_map[node_id]
             # Delete child node relationships
-            if node.has_child:
+            if node.child_cnt:
                 # Based on child nodes in the graph
                 for child_id in list(self.G.successors(node_id)):
                     self._node_map[child_id].parents_cnt -= 1
@@ -129,7 +159,7 @@ class MemoryGraph:
             del self._node_map[node_id]
 
     def delete_child(self, parent_id: int, child_id: int):
-        # Delete edge relationships
+        # Delete edge relationships 
         if parent_id in self._node_map and child_id in self._node_map:
             if self.G.has_edge(parent_id, child_id):
                 self.G.remove_edge(parent_id, child_id)  # Corrected typo: remochild_ide_edge -> remove_edge
@@ -140,7 +170,7 @@ class MemoryGraph:
                     child.parents_cnt -= 1
                     parent.child_ids.remove(child.node_id)  # Corrected typo: remochild_ide -> remove
                     if parent.parents_cnt == 0:
-                        parent.has_child = False
+                        parent.child_cnt -= 1
                     # If the child node has no parent nodes left, delete the child node
                     if child.parents_cnt == 0:
                         self.delete_node(child.node_id)
@@ -154,7 +184,7 @@ class MemoryGraph:
         # Get parent and child node objects
         parent_node = self._node_map[parent_id]
         child_node = self._node_map[child_id]
-        parent_node.has_child = True
+        parent_node.child_cnt += 1
         # Update the parent count of the child node
         child_node.parents_cnt += 1
         # Update the edge relationship in the graph
@@ -199,65 +229,117 @@ class MemoryGraph:
 
     def load_from_file(self, file_path: str):
         # Load graph data from a file
-        # TODO: Implement logic to load graph data from a file
-        pass
-
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        for node_data in data:
+            node_id = node_data["id"]
+            node_type = NodeType[node_data["type"]]
+            node_class = NodeClass[node_data["class"]]
+            name = node_data["name"]
+            summary = node_data["summary"]
+            parent_id = node_data.get("parent", -1)
+            weight = node_data.get("weight", 1.0)
+            child_cnt = node_data.get("child_cnt", 0)
+            parents_cnt = node_data.get("parents_cnt", 0)
+            print(f"Loading node {node_id}: type={node_type}, class={node_class}, name={name}, parent_id={parent_id}, weight={weight}, child_cnt={child_cnt}, parents_cnt={parents_cnt}")
+            if node_class == NodeClass.SPACE:
+                x = node_data.get("x", 0.0)
+                y = node_data.get("y", 0.0)
+                z = node_data.get("z", 0.0)
+                # Create the node
+                self.add_node(node_type, node_class, name, summary,
+                            parent_id, weight=weight,
+                            child_cnt=child_cnt, parents_cnt=parents_cnt,
+                            x=x, y=y, z=z)
+            elif node_class == NodeClass.TIME:
+                timestamp = node_data.get("timestamp", -1.0)
+                # Create the node
+                self.add_node(node_type, node_class, name, summary,
+                            parent_id, weight=weight,
+                            child_cnt=child_cnt, parents_cnt=parents_cnt,
+                            timestamp=timestamp)
+            else:
+                # Create the node without spatial or temporal attributes
+                self.add_node(node_type, node_class, name, summary,
+                        parent_id, weight=weight,
+                        child_cnt=child_cnt, parents_cnt=parents_cnt)
+     
     def save_to_file(self, file_path: str):
-        # Save graph data to a file
-        # TODO: Implement logic to save graph data to a file
-        pass
+        # Save the graph to a file in JSON format
+        data = []
+        for node_id, node in self._node_map.items():
+        # for node in self.G.nodes(data=True):
+            node_data = {
+                "id": node.node_id,
+                "type": node.node_type.name,
+                "class": node.node_class.name,
+                "name": node.name,
+                "summary": node.summary,
+                "parent": node.parent_id,
+                "weight": node.weight,
+                "child_cnt": node.child_cnt,
+                "parents_cnt": node.parents_cnt
+            }
+            if node.node_class == NodeClass.SPACE:
+                node_data["x"] = self.G.nodes[node_id].get('x', 0.0)
+                node_data["y"] = self.G.nodes[node_id].get('y', 0.0)
+                node_data["z"] = self.G.nodes[node_id].get('z', 0.0)
+            if node.node_class == NodeClass.TIME:
+                node_data["timestamp"] = self.G.nodes[node_id].get('timestamp', -1.0)
+            
+            data.append(node_data)
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
 
     # Convert the graph to a visualization image and save it
     def visualize(self, file_path: str):
-
-        # font_path = '/usr/share/fonts/opentype/noto//NotoSansCJK-Regular.ttc'   # Modify as needed
-        # my_font = fm.FontProperties(fname=font_path, size=10)
-
-        # Visualize the graph and save it as an image, using the 'name' field as the node label
-        pos = nx.spring_layout(self.G)
-        plt.figure(figsize=(12, 8))
+        # according to the level information self.G.nodes[node_id]['level'] to locate the position of the point, and increase the same interval for points at the same level
+        plt.figure(figsize=(16, 10))
+        pos = {}
+        levels = {}
+        for node_id, data in self.G.nodes(data=True):
+            print(f"Node ID: {node_id}, Level: {data}")
+            level = data['level']
+            if level not in levels:
+                levels[level] = []
+            levels[level].append(node_id)
+        # calculate the spacing for each level
+        level_spacing = 1.0  
+        for level, node_ids in levels.items():
+            y = level * level_spacing
+            for i, node_id in enumerate(node_ids):
+                x = i * level_spacing
+                pos[node_id] = (x, y)
         nx.draw(self.G, pos,
-                with_labels=False, node_size=700,
-                node_color='lightblue',
-                font_size=10, font_color='black', font_weight='bold', font_family=my_font.get_name(),
-                arrows=True)
-        # labels = {node: f"{data['name']}\n{data['summary']}" for node, data in self.G.nodes(data=True)}
-        labels = {node: f"{data['name']}" for node, data in self.G.nodes(data=True)}
+                node_size=700, node_color='lightblue', font_size=10, font_color='black', font_weight='bold', arrows=True, arrowsize=20)
+        labels = {node_id: f"{data['name']}" for node_id, data in self.G.nodes(data=True)}
         nx.draw_networkx_labels(self.G, pos, labels=labels, font_size=8, font_color='black')
         plt.title("Memory Graph Visualization")
-
-        plt.savefig(file_path)
+        plt.axis('off')
+        plt.savefig(file_path, format='png', bbox_inches='tight')
         plt.close()
 
-if __name__ == "__main__":
+def main():
     mg = MemoryGraph()
-    
-    node1_id = mg.add_node(NodeType.FIXED, NodeClass.CONTEXT, "embody ai assiant", "as an embody ai assisant")
-    node2_id = mg.add_node(NodeType.LONG_TERM, NodeClass.CONTEXT, "skill:get milk", "倒牛奶流程有", parent_id=node1_id, has_child=True, ordered=True)
-    node3_id = mg.add_node(NodeType.LONG_TERM, NodeClass.SPACE, "location:kitchen", "厨房里有冰箱，水杯", parent_id=node1_id, x= 1.0, y=1.0, z=1.0)
-    node4_id = mg.add_node(NodeType.LONG_TERM, NodeClass.TIME, "open fridge", "打开冰箱", parent_id=node2_id, has_child=True, ordered=True)
-    node5_id = mg.add_node(NodeType.LONG_TERM, NodeClass.TIME, "get milk", "取出牛奶", parent_id=node2_id, has_child=True, ordered=True)
-    node6_id = mg.add_node(NodeType.LONG_TERM, NodeClass.TIME, "drop bottle", "倒入杯子", parent_id=node2_id, has_child=True, ordered=True)
-    node7_id = mg.add_node(NodeType.LONG_TERM, NodeClass.TIME, "heat milk", "加热牛奶", parent_id=node2_id, has_child=True, ordered=True)
-    node8_id = mg.add_node(NodeType.LONG_TERM, NodeClass.SPACE, "fridge", "冰箱里有牛奶", parent_id=node3_id, x=1.0, y=2.0, z=1.0)
-    node9_id = mg.add_node(NodeType.LONG_TERM, NodeClass.SPACE, "bottle", "水杯在桌子上", parent_id=node3_id, x=2.0, y=3.0, z=1.0)
-    node10_id = mg.add_node(NodeType.LONG_TERM, NodeClass.SPACE, "milk", "牛奶在冰箱里", parent_id=node8_id, x=1.0, y=2.0, z=3.0)
 
-    # build temporal and spatial relationships
-    mg.add_child(node4_id, node8_id)
-    mg.add_child(node5_id, node10_id)
-    mg.add_child(node6_id, node9_id)
-    mg.add_child(node7_id, node9_id)
+    mg.load_from_file("memory_graph.json")
 
     # check
     print("All nodes in the graph:")
     for node_id, node in mg._node_map.items():
         print(f"Node ID: {node_id}, Name: {node.name}, Summary: {node.summary}, Type: {node.node_type}, Class: {node.node_class}")
-    print("\nNode 1 details:", mg.get_node(node1_id).__dict__)
-    print("Node 2 details:", mg.get_node(node2_id).__dict__)
-    print("Node 3 details:", mg.get_node(node3_id).__dict__)
-    print("Graph Node 3 details:", mg.get_graph_node(node3_id))
+    print("\nNode 1 details:", mg.get_node(1).__dict__)
+    print("Node 2 details:", mg.get_node(2).__dict__)
+    print("Node 3 details:", mg.get_node(3).__dict__)
+    print("Graph Node 3 details:", mg.get_graph_node(3))
+
+    print("Node 18 details:", mg.get_node(18).__dict__)
 
     # visualize
-    mg.visualize("memory_graph.png")
+    mg.visualize("memory_graph2.png")
 
+    mg.save_to_file("memory_graph2.json")
+
+if __name__ == "__main__":
+    main()
+     
