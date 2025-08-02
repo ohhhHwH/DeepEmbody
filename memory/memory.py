@@ -319,6 +319,19 @@ class MemoryGraph:
         plt.savefig(file_path, format='png', bbox_inches='tight')
         plt.close()
 
+class CurrentState:
+    def __init__(self, init_memory_graph: str = "basic_memory_graph.json"):
+        
+        self.memory_graph = MemoryGraph()
+        self.memory_graph.load_from_file(init_memory_graph)
+        
+        
+        
+
+    def get_current_state(self) -> Dict[int, MemoryNode]:
+        # Get the current state of the memory graph
+        return self.memory_graph._node_map
+
 def main():
     mg = MemoryGraph()
 
