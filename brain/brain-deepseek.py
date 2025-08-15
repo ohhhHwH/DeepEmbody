@@ -36,7 +36,8 @@ system_prompt_en = '''
         [FC]:funcname2(para1=argu1, para2=argu2);
     }
     you will not call the tools directly, but return the function call in the format above.
-
+    when you get the tool call results, you will continue to answer the user query based on the tool call results.\
+    never make up tools or parameters that are not in
     the tools you can use are:
 '''
 # judge whether the message contains a tool call

@@ -135,9 +135,13 @@ add memory node in memory.py as follow:
 Memory TODO list:
 
 memory exchange, short-term memory to long-term memory conversion
+
 Integrate with LLM
+
 LLM output structuring and visualization
+
 Structuring and unstructuring
+
 Real-world/Simulation
 Implementation
 Parallelization
