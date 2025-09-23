@@ -1,6 +1,7 @@
-# DeepEmbody
+# Robonix
+![robonix](robonix.png)
 
-**DeepEmbody** is an open-source embodied intelligence framework designed to provide the following features:
+**Robonix** is an open-source embodied intelligence framework designed to provide the following features:
 
 * [x] Support for multi-process/task management, including various task types such as ROS2 nodes, Python scripts, and C++ programs.
 * [ ] Native support for LLM/VLM-based MCP service invocation.
@@ -70,8 +71,8 @@
 ## Setup
 
 ```bash
-git clone https://github.com/syswonder/deepembody.git
-cd deepembody
+git clone https://github.com/syswonder/Robonix.git
+cd Robonix
 ```
 
 ## Startup

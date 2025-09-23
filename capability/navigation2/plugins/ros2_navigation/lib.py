@@ -8,7 +8,7 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from sensor_msgs.msg import Range
 import sys
 
-from DeepEmbody.manager.eaios_decorators import eaios
+from Robonix.manager.eaios_decorators import eaios
 
 class NavWithUltrasonicSafety(Node):
     def __init__(self,safety_threshold=0.5):
@@ -72,6 +72,6 @@ def nv_test():
 def set_goal(x, y, yaw) -> str:
     # rclpy.init()
     res = nv_controller.set_goal(x,y,yaw)
-    func_status = f"Service set_gaol response: {res}"
+    func_status = f"Service set_goal response: {res}"
     # rclpy.shutdown()
     return func_status

@@ -1,22 +1,21 @@
 driver:
-  - piontcloud_to_laserscan
+  - pointcloud_to_laserscan # TODO: fix this to "pointcloud"
   - ranger_ros2
-  - raspi_hc_sr04
+  # - raspi_hc_sr04
   - realsense_ros2
   - static_tf
   - mid360
   # - unilidar_L2
 capability:
-  - amcl
-  - map_server
   - navigation2
-  - activator
   - vision
+  - pointcloud
 skill:
   - move
   - vision
   - semantic_map
   - test_skill
+  - pointcloud
 brain:
   - test_brian
 
