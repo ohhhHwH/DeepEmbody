@@ -1,0 +1,424 @@
+{
+    "nodes": [
+        {
+            "id": 0,
+            "event": "Root of the memory graph"
+        },
+        {
+            "id": 1,
+            "event": "Space node for / at /"
+        },
+        {
+            "id": 2,
+            "event": "Space node for robot at /robot"
+        },
+        {
+            "id": 3,
+            "event": "Skill: cap_space_move, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 4,
+            "event": "Skill: cap_space_getpos, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 5,
+            "event": "Skill: cap_save_rgb_image, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 6,
+            "event": "Skill: cap_save_depth_image, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 7,
+            "event": "Space node for move_base at /robot/move_base"
+        },
+        {
+            "id": 8,
+            "event": "Space node for camera at /robot/camera"
+        },
+        {
+            "id": 9,
+            "event": "Skill: cap_camera_dep_rgb, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 10,
+            "event": "Skill: cap_camera_info, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 11,
+            "event": "Skill: cap_get_robot_pose, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 12,
+            "event": "Skill: skl_detect_objs, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 13,
+            "event": "Space node for chair at /chair"
+        },
+        {
+            "id": 14,
+            "event": "Skill: cap_space_getpos, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 15,
+            "event": "Space node for courtyard at /courtyard"
+        },
+        {
+            "id": 16,
+            "event": "Skill: cap_space_getpos, Type: , Input: {}, Output: {}, Dependencies: []"
+        },
+        {
+            "id": 17,
+            "event": "as embody ai assistant"
+        },
+        {
+            "id": 18,
+            "event": "milk service process"
+        },
+        {
+            "id": 19,
+            "event": "kitchen scene (with fridge, sink, dining table)"
+        },
+        {
+            "id": 20,
+            "event": "home refrigerator (with milk inside)"
+        },
+        {
+            "id": 21,
+            "event": "unopened milk carton"
+        },
+        {
+            "id": 22,
+            "event": "clean cup (empty)"
+        },
+        {
+            "id": 23,
+            "event": " walk to the fridge"
+        },
+        {
+            "id": 24,
+            "event": " open the fridge door"
+        },
+        {
+            "id": 25,
+            "event": " check if the milk is expired"
+        },
+        {
+            "id": 26,
+            "event": "milk is expired"
+        },
+        {
+            "id": 27,
+            "event": "milk is not expired"
+        },
+        {
+            "id": 28,
+            "event": " take out the milk"
+        },
+        {
+            "id": 29,
+            "event": " dispose of the expired milk"
+        },
+        {
+            "id": 30,
+            "event": " walk to the sink"
+        },
+        {
+            "id": 31,
+            "event": " pick up the cup"
+        },
+        {
+            "id": 32,
+            "event": " clean the cup"
+        },
+        {
+            "id": 33,
+            "event": " pour milk into the cup"
+        },
+        {
+            "id": 34,
+            "event": " heat the milk (microwave)"
+        },
+        {
+            "id": 35,
+            "event": " deliver the milk to the user"
+        },
+        {
+            "id": 36,
+            "event": " walk to the kitchen trash can"
+        },
+        {
+            "id": 37,
+            "event": " open the trash can lid"
+        },
+        {
+            "id": 38,
+            "event": " dispose of the milk"
+        },
+        {
+            "id": 39,
+            "event": " close the trash can lid"
+        },
+        {
+            "id": 40,
+            "event": "cleaning skill"
+        },
+        {
+            "id": 41,
+            "event": " start sweeping mode"
+        },
+        {
+            "id": 42,
+            "event": " clean the dust off the broom"
+        },
+        {
+            "id": 43,
+            "event": "charging process"
+        },
+        {
+            "id": 44,
+            "event": " navigate to the charging dock"
+        },
+        {
+            "id": 45,
+            "event": "dock to the charging station"
+        },
+        {
+            "id": 46,
+            "event": "start charging"
+        }
+    ],
+    "edges": [
+        {
+            "source": 0,
+            "target": 1,
+            "relation": "next"
+        },
+        {
+            "source": 0,
+            "target": 17,
+            "relation": "next"
+        },
+        {
+            "source": 1,
+            "target": 2,
+            "relation": "next"
+        },
+        {
+            "source": 1,
+            "target": 13,
+            "relation": "next"
+        },
+        {
+            "source": 1,
+            "target": 15,
+            "relation": "next"
+        },
+        {
+            "source": 2,
+            "target": 3,
+            "relation": "next"
+        },
+        {
+            "source": 2,
+            "target": 4,
+            "relation": "next"
+        },
+        {
+            "source": 2,
+            "target": 5,
+            "relation": "next"
+        },
+        {
+            "source": 2,
+            "target": 6,
+            "relation": "next"
+        },
+        {
+            "source": 2,
+            "target": 7,
+            "relation": "next"
+        },
+        {
+            "source": 2,
+            "target": 8,
+            "relation": "next"
+        },
+        {
+            "source": 8,
+            "target": 9,
+            "relation": "next"
+        },
+        {
+            "source": 8,
+            "target": 10,
+            "relation": "next"
+        },
+        {
+            "source": 8,
+            "target": 11,
+            "relation": "next"
+        },
+        {
+            "source": 8,
+            "target": 12,
+            "relation": "next"
+        },
+        {
+            "source": 13,
+            "target": 14,
+            "relation": "next"
+        },
+        {
+            "source": 15,
+            "target": 16,
+            "relation": "next"
+        },
+        {
+            "source": 17,
+            "target": 18,
+            "relation": "next"
+        },
+        {
+            "source": 17,
+            "target": 19,
+            "relation": "next"
+        },
+        {
+            "source": 17,
+            "target": 40,
+            "relation": "next"
+        },
+        {
+            "source": 17,
+            "target": 43,
+            "relation": "next"
+        },
+        {
+            "source": 18,
+            "target": 23,
+            "relation": "next"
+        },
+        {
+            "source": 18,
+            "target": 24,
+            "relation": "next"
+        },
+        {
+            "source": 18,
+            "target": 25,
+            "relation": "next"
+        },
+        {
+            "source": 19,
+            "target": 20,
+            "relation": "next"
+        },
+        {
+            "source": 19,
+            "target": 22,
+            "relation": "next"
+        },
+        {
+            "source": 20,
+            "target": 21,
+            "relation": "next"
+        },
+        {
+            "source": 25,
+            "target": 26,
+            "relation": "next"
+        },
+        {
+            "source": 25,
+            "target": 27,
+            "relation": "next"
+        },
+        {
+            "source": 26,
+            "target": 28,
+            "relation": "next"
+        },
+        {
+            "source": 26,
+            "target": 30,
+            "relation": "next"
+        },
+        {
+            "source": 26,
+            "target": 31,
+            "relation": "next"
+        },
+        {
+            "source": 26,
+            "target": 32,
+            "relation": "next"
+        },
+        {
+            "source": 26,
+            "target": 33,
+            "relation": "next"
+        },
+        {
+            "source": 26,
+            "target": 34,
+            "relation": "next"
+        },
+        {
+            "source": 26,
+            "target": 35,
+            "relation": "next"
+        },
+        {
+            "source": 27,
+            "target": 29,
+            "relation": "next"
+        },
+        {
+            "source": 27,
+            "target": 36,
+            "relation": "next"
+        },
+        {
+            "source": 27,
+            "target": 37,
+            "relation": "next"
+        },
+        {
+            "source": 27,
+            "target": 38,
+            "relation": "next"
+        },
+        {
+            "source": 27,
+            "target": 39,
+            "relation": "next"
+        },
+        {
+            "source": 40,
+            "target": 41,
+            "relation": "next"
+        },
+        {
+            "source": 40,
+            "target": 42,
+            "relation": "next"
+        },
+        {
+            "source": 43,
+            "target": 44,
+            "relation": "next"
+        },
+        {
+            "source": 43,
+            "target": 45,
+            "relation": "next"
+        },
+        {
+            "source": 43,
+            "target": 46,
+            "relation": "next"
+        }
+    ]
+}
