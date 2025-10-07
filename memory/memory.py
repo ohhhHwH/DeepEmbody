@@ -578,7 +578,6 @@ class CurrentState:
         with open("memory/data/retrieval_memory.json", 'w') as f:
             json.dump(retrieval_data, f, indent=4, ensure_ascii=False)
         
-    
     # TODO FIX 适配当前graph的检索 - query 分为两种类型 用户请求 和 安全规则
     def retrieval_Request(self, query: str):
         
@@ -626,8 +625,9 @@ def test():
     
     results = cs.retrieval_Request(query)
     
-    
     print("Retrieval Results:\n", results)
+
+
     
     # 将 graph 保存至json并可视化 
     #cs.memory_graph.save_to_file("memory/data/current_memory_graph.json")

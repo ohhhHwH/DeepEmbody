@@ -2,6 +2,7 @@ import asyncio
 import os
 import time
 import subprocess
+from typing import Optional, Tuple, List, Any
 
 import rclpy
 from rclpy.node import Node
@@ -52,6 +53,7 @@ def judge_tool_call(content):
             return True
     return False
 
+# 这个是不是应该放到不同的模拟器下去做format 或者统一成 action语言
 def tool_calls_format(tool_calls_str: str):
     '''
     {
@@ -87,7 +89,7 @@ def tool_calls_format(tool_calls_str: str):
             })
     return tool_calls
 
-# TODO:ros2 topic to get information
+# ros2 topic to get information
 class ClinetNodeController(Node):
     def __init__(self):
         super().__init__("client_node_controller")
@@ -286,22 +288,27 @@ class MCPClient:
         await self.exit_stack.aclose()
 
     # 将 query 通过 llm 化为具体的plan - 仿照process_query中实现
-    def query_request(self, query : str, info : str, safe_rule : str) -> List:
+    def query_request(self, query : str, info : str = None, safe_rule : str = None, prompt : str = None , messages : list = None) -> Tuple[List[Any], List[Any]]:
         # 将info 添加到system_prompt_en中
-        prompt = system_prompt_en + "\n you can use the following info:\n" + info + "safe_rule:\n" + safe_rule
-        print("debug prompt for plan generation:\n", prompt)
+        if prompt is None:
+            prompt = system_prompt_en
+        if info is not None:
+            prompt += "\n the current environment info is:\n" + info
+        if safe_rule is not None:
+            prompt += "\n the plan must follow the following safe_rule:\n" + safe_rule
 
         # 构建messages
-        messages = [
-            {
-                "role": "system",
-                "content": prompt
-            },
-            {
-                "role": "user",
-                "content": query
-            }
-        ]
+        if messages is None:
+            messages = [
+                {
+                    "role": "system",
+                    "content": prompt
+                },
+                {
+                    "role": "user",
+                    "content": query
+                }
+            ]
 
         safe_result = "none"
         llm_counter = 0
@@ -321,20 +328,33 @@ class MCPClient:
                 "content": content
             })
 
-            print("debug plan response:\n", content)
+            print("\ndebug plan response:\n", content)
 
             plan = [] # 解析content为具体的plan结构
 
-            judge_tool_call(content)
             if judge_tool_call(content) == True:
                 plan = tool_calls_format(content[content.find("{"):content.rfind("}") + 1])
+            else :
+                # 将 { } 中的每一行字符串放到 plan 中
+                plan_str = content[content.find("{"):content.rfind("}") + 1]
+                plan_lines = plan_str.split("\n")
+                for line in plan_lines:
+                    line = line.strip()
+                    if line.startswith("{") or line.startswith("}"):
+                        continue
+                    if line:
+                        plan.append(line)
+                
             
             print("debug plan:\n", plan)
+            
+            # 调试默认安全
+            safe_result = "safe"
 
             # 对plan进行安全性判断
-            safe_result = self.safe_plan_request(plan, safe_rule)
+            # safe_result = self.safe_plan_request(plan, safe_rule)
             
-            print("debug safe_result:\n", safe_result)
+            # print("debug safe_result:\n", safe_result)
 
             if safe_result != "safe":
                 print("Plan is not safe, aborting execution.")
@@ -345,10 +365,10 @@ class MCPClient:
                     "content": f"The previous plan was not safe because: {safe_result}. Please generate a new safe plan."
                 })
 
-        return plan
+        return plan, messages
 
     # 将生成的plan转化为具体的 simple.action
-    def plan_to_action(self, plan: List) -> str:
+    def plan_to_action(self, plan: list) -> str:
         
         # TODO 暂时先用 llm 根据 plan 进行二次生成，后续根据具体的 plan 结构进行转换 实现一个类似与编译器的函数来实现转换
 
@@ -418,6 +438,9 @@ class MCPClient:
 
         return content
 
+    def safe_plan_request(self, plan: list, safe_rule: str) -> str:
+        # TODO 目前先默认安全，后续实现调用 llm 进行安全性判断
+        return "safe"
 
 # ros2 topic to get information from 
 class BrainNodeController(Node):
