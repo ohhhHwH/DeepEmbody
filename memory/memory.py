@@ -9,10 +9,10 @@ from enum import IntEnum
 import json
 from collections import deque
 
-from modules.skg.skg import * 
-from modules.retriever.retriever import *
+from memory.modules.skg.skg import * 
+from memory.modules.retriever.retriever import *
 
-from modules.memory.memory import *
+from memory.modules.memory.memory import *
 
 
 
@@ -579,7 +579,7 @@ class CurrentState:
             json.dump(retrieval_data, f, indent=4, ensure_ascii=False)
         
     # TODO FIX 适配当前graph的检索 - query 分为两种类型 用户请求 和 安全规则
-    def retrieval_Request(self, query: str):
+    def retrieval_Request(self, query: str, top_k: int = 5) -> List[dict]:
         
         # 将 场景所有信息更新到memory/data/retrieval_memory.json中
         self.update_retrieval()

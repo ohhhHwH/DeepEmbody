@@ -30,8 +30,8 @@
                   <Placement x="-203.5" y="81.0" z="217.5"/>
             </AgentStart>
             <AgentHandlers>
-                <DiscreteMovementCommands/>
-                <ContinuousMovementCommands turnSpeedDegs="180"/>
+                <!-- <DiscreteMovementCommands/> -->
+                <ContinuousMovementCommands turnSpeedDegs="30"/>
                 <MissionQuitCommands/>
                 <ObservationFromNearbyEntities>
                     <Range name="entities" xrange="8" yrange="2" zrange="6" />
