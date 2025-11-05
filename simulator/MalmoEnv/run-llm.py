@@ -212,9 +212,6 @@ if __name__ == '__main__':
             if (i + 1) % 5 == 0:
                 print()
                 
-        # 获取所有可用actions, 生成 ["0:move 1", "1:move -1"]
-        # all_actions = [act for act in env.action_space]
-        # 'the available actions:\n0:move 1 [DiscreteMovement]\n1:move -1 [DiscreteMovement]\n2:turn 1 [DiscreteMovement]\n3:turn -1 [DiscreteMovement]\n4:jump 1 [DiscreteMovement]\n5:look 1 [DiscreteMovement]\n6:look -1 [DiscreteMovement]\n7:attack 1 [DiscreteMovement]\n8:use 1 [DiscreteMovement]\n9:jump 1 [ContinuousMovement]\n10:jump 0 [ContinuousMovement]\n11:move 1 [ContinuousMovement]\n12:move -1 [ContinuousMovement]\n13:turn 1 [ContinuousMovement]\n14:turn -1 [ContinuousMovement]\n15:attack 1 [ContinuousMovement]\n16:attack 0 [ContinuousMovement]\n17:use 1 [ContinuousMovement]\n18:use 0 [ContinuousMovement]'
         actions_prompt = "the available actions:\n" + ", ".join(f"{i}:{act} [{act_type}]" for i, (act, act_type) in enumerate(zip(env.actions, env.actions_type)))
         
         prompt = system_prompt_en_mc + actions_prompt

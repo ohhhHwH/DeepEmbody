@@ -314,6 +314,11 @@ class Env:
 
     def seed(self):
         pass
+    
+    def step_diy(self, action_str):
+        step_message = "<Step" + str(self.step_options) + ">" + \
+                       action_str + \
+                       "</Step" + str(self.step_options) + " >"
 
     def step(self, action):
         """gym api step"""
@@ -330,6 +335,7 @@ class Env:
             step_message = "<Step" + str(self.step_options) + ">" + \
                            self.action_space[action] + \
                            "</Step" + str(self.step_options) + " >"
+            print("step message: " + step_message)
             comms.send_message(self.client_socket, step_message.encode())
             if withturnkey:
                 comms.send_message(self.client_socket, self.turn_key.encode())

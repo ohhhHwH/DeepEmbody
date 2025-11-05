@@ -65,7 +65,16 @@ system_prompt_en_mc = '''
     never make up tools or parameters that are not in.
 '''
 
+obj_prompt_en_mc = '''
+在MC中的一个玩家，你将回答当前场景中的物体位置与其坐标信息，
+根据环境的信息判断除分类器以外的物体的坐标及其属性，并将其打包成一个 json 格式返回
 
+    as a player in minecraft, you will answer questions about the positions and coordinates of objects in the current scene.
+    you will determine the coordinates and attributes of objects other than the classifier based on the information in the environment,
+    and return them packaged in a json format.
+    
+
+'''
 
 # 从 mission xml 中解析 ObservationFromGrid 的 min/max
 def parse_observation_grid(xml_text, grid_name=None):
@@ -190,7 +199,7 @@ def mc_cap2scene_info(actions, actions_type, grid_info):
     return scene_info
 
 def info2json(info):
-    
+    # TODO
     update_info = {}
     
     # 将 info 字符串 转成 info 字典
@@ -280,14 +289,7 @@ if __name__ == '__main__':
         f.write('env.actions ' + str(env.actions) + '\n')
         # 写入多行回车
         f.write('\n\n\n\n')
-    
-    # # 删除 log 文件
-    # if log_file.exists():
-    #     log_file.unlink()
-    #     print(f"Deleted existing log file: {log_file}")
-    # # 调试退出
-    # exit(0)
-    
+
     load_dotenv()
     api_key = os.getenv("API_KEY")
     client = MCPClient(api_key=api_key)
@@ -296,7 +298,7 @@ if __name__ == '__main__':
     # 解析 observation grid
     grid_info = parse_observation_grid(xml, grid_name="around")
     # 排除的物体
-    exfilter = {"air", "water", "leaves2", "stone", "grass", "dirt", "tallgrass", "sand"}
+    exfilter = {"air", "water", "leaves2", "stone", "grass", "dirt", "sand"}
     
     cs = CurrentState()
     skills_memory = mc_cap2scene_info(env.actions, env.actions_type, grid_info)
@@ -357,8 +359,13 @@ if __name__ == '__main__':
             action = 0
             print("debug Generated action sequence:", action_sequence)
             
+            
+            
             if action_sequence is None or len(action_sequence) == 0:
                 print("No action sequence generated, exiting the episode.")
+                
+                # TODO : 检测 任务 是否完成 如果完成，总结并作为一个 长期情景节点 保存
+                
                 break
             
             # 遍历 action_sequence

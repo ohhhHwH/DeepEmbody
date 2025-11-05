@@ -22,18 +22,133 @@ import argparse
 from pathlib import Path
 import time
 from PIL import Image
-
+import cv2
+import numpy as np
 # 加入 LLM
 
 # 加入 memory
 
 
+def get_observation_grid_range(source, grid_name=None):
+    """
+    从 Mission XML（字符串或文件路径）解析 ObservationFromGrid 中 Grid 的 min/max 范围。
+    参数:
+      - source: XML 字符串或 pathlib.Path/文件路径字符串
+      - grid_name: 可选，指定 Grid 的 name 属性，若为 None 返回第一个匹配的 Grid
+    返回:
+      - dict: {'name': str, 'min': (xmin,ymin,zmin), 'max': (xmax,ymax,zmax)}
+      - 若未找到返回 None
+    """
+    import xml.etree.ElementTree as ET
+    from pathlib import Path
 
+    # 载入 xml 文本
+    if isinstance(source, (str, Path)) and Path(source).exists():
+        xml_text = Path(source).read_text()
+    else:
+        xml_text = source
+
+    ns = {'m': 'http://ProjectMalmo.microsoft.com'}
+    try:
+        root = ET.fromstring(xml_text)
+    except Exception:
+        return None
+
+    for obs in root.findall('.//m:ObservationFromGrid', ns):
+        grid = obs.find('m:Grid', ns)
+        if grid is None:
+            continue
+        name = grid.get('name')
+        if grid_name is not None and name != grid_name:
+            continue
+        min_e = grid.find('m:min', ns)
+        max_e = grid.find('m:max', ns)
+        if min_e is None or max_e is None:
+            continue
+        try:
+            xmin = int(min_e.get('x'))
+            ymin = int(min_e.get('y'))
+            zmin = int(min_e.get('z'))
+            xmax = int(max_e.get('x'))
+            ymax = int(max_e.get('y'))
+            zmax = int(max_e.get('z'))
+        except (TypeError, ValueError):
+            continue
+        return {'name': name, 'min': (xmin, ymin, zmin), 'max': (xmax, ymax, zmax)}
+    return None
+
+def info_observation_grid_range(around, grid_range):
+    # 根据 grid_range 对 around 进行处理，将 y 轴上下翻转
+    
+    if around is None or grid_range is None:
+        return None
+    
+    x_min, y_min, z_min = grid_range['min']
+    x_max, y_max, z_max = grid_range['max']
+    
+    # 将 around 划分成 y 轴的多个层
+    y_layers = y_max - y_min + 1
+    x_size = x_max - x_min + 1
+    z_size = z_max - z_min + 1
+    layer_size = x_size * z_size
+    
+    around_layers = []
+    for y in range(y_layers):
+        start_idx = y * layer_size
+        end_idx = start_idx + layer_size
+        layer = around[start_idx:end_idx]
+        # 在前面插入
+        around_layers.insert(0, layer)
+    return around_layers
+
+def save_img(obs, env):
+    # 如果有 depth 信息 depth 为 4
+    h, w, d = env.observation_space.shape
+    # obs = obs.reshape((960, 1440, 3))   # 高、宽、通道
+    obs = obs.reshape((h, w, d))
+    print("obs reshaped:", obs.shape, "obs size:", obs.size)
+    # # 上下翻转图像
+    obs = cv2.flip(obs, 0)
+    print("obs.shape:", obs.shape, "obs.size:", obs.size)
+    frame = cv2.cvtColor(obs, cv2.COLOR_RGB2BGR)
+    # cv2.imwrite("malmo_obs.png", frame)
+    
+    # --- 分离通道 ---
+    if d == 4:
+        rgb = obs[:, :, :3]        # RGB 通道
+        depth = obs[:, :, 3]       # 深度通道（通常是 float 或 uint8）
+    else:
+        rgb = obs
+        depth = None
+    
+    # --- 保存 RGB 图像 ---
+    rgb_bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    cv2.imwrite("malmo_rgb.png", rgb_bgr)
+    # print("已保存 RGB 图像: malmo_rgb.png")
+
+    # --- 保存深度图像 ---
+    if depth is not None:
+        # 深度通常是原始数值，范围可大可小
+        # 为了保存可视化效果，将其归一化到 0~255
+        depth_norm = cv2.normalize(depth, None, 0, 255, cv2.NORM_MINMAX)
+        depth_uint8 = depth_norm.astype(np.uint8)
+        cv2.imwrite("malmo_depth.png", depth_uint8)
+        # print("已保存 Depth 图像: malmo_depth.png")
+        # 根据图像的深度信息加 mask ，超过阈值的部分设为白色
+        depth_threshold = 200  # 根据需要调整阈值
+        mask = depth_uint8 < depth_threshold
+        # rgb_masked = np.zeros_like(rgb)
+        rgb_masked = np.ones_like(rgb) * 255  # 白色背景
+        rgb_masked[mask] = rgb[mask]
+        rgb_masked_bgr = cv2.cvtColor(rgb_masked, cv2.COLOR_RGB2BGR)
+        cv2.imwrite("malmo_obs.png", rgb_masked_bgr)
+    else:
+        print("当前观测中没有深度通道")
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='malmovnv test')
-    parser.add_argument('--mission', type=str, default='simulator/MalmoEnv/missions/mobchase_single_agent.xml', help='the mission xml')
+    parser.add_argument('--mission', type=str, default='simulator/MalmoEnv/missions/defaultworld.xml', help='the mission xml')
     parser.add_argument('--port', type=int, default=9000, help='the mission server port')
     parser.add_argument('--server', type=str, default='127.0.0.1', help='the mission server DNS or IP address')
     parser.add_argument('--port2', type=int, default=None, help="(Multi-agent) role N's mission port. Defaults to server port.")
@@ -55,7 +170,13 @@ if __name__ == '__main__':
     
     # 添加 动作过滤器 所有动作都在这个范围内
     # action_filter = {"move", "turn", "use", "attack"}
-    action_filter = {"move", "turn", "use", "attack", "look", "jump"}
+    action_filter = {"move", "jumpmove", "strafe", "jumpstrafe", "turn", "movenorth", "moveeast",
+                    "movesouth", "movewest", "jumpnorth", "jumpeast", "jumpsouth", "jumpwest",
+                    "jump", "look", "attack", "use", "jumpuse"}
+    
+    # 获取 xml 中ObservationFromGrid的 around 范围
+    around_range = get_observation_grid_range(args.mission, grid_name='around')
+    print(f"Around range from XML: {around_range}")
 
     # 将xml中内容传入并接卸
     env.init(xml, args.port,
@@ -122,6 +243,7 @@ if __name__ == '__main__':
             print("Continuing the experiment.")
             
             
+
         # add : 根据 env.actions 建立 Graph
         
 
@@ -170,38 +292,37 @@ if __name__ == '__main__':
             obs, reward, done, info = env.step(action)
             steps += 1
             
-            # 将以上信息写入action.log
-            with open(log_file, 'a') as f:
-                f.write('reward: ' + str(reward) + '\n')
-                f.write('done: ' + str(done) + '\n')
-                f.write('obs: ' + str(obs) + '\n')
-                f.write('info: ' + info + '\n')
-                f.write('-------------------------\n')
+
                 
                 
             print("action: " + str(action) + ',' + env.action_space[action])
             print("reward: " + str(reward))
             print("done: " + str(done))
-            print("obs: " + str(obs))
-            print("info" + info)
+            # print("obs: " + str(obs))
+            # print("info: " + info)
             # 将 info 字符串 转成 info 字典
-            # info = eval(info) if info else {}
-            # 打印出 info 字典的 board 信息
-            # print("info board: " + str(info.get('board', 'N/A')))
+            info = eval(info)
+            # 打印出 info 字典的 around 信息
+            around = info.get('around', None)
+            around = info_observation_grid_range(around, around_range)
+
+            print("info around: " + str(around))
             
             
             
+            # 将以上信息写入action.log 图像存入 malmo_obs.png
+            with open(log_file, 'a') as f:
+                f.write('reward: ' + str(reward) + '\n')
+                f.write('done: ' + str(done) + '\n')
+                f.write('info: ' + str(info) + '\n')
+                f.write('-------------------------\n')
             
+            # 保存图像
+            save_img(obs, env)
             
+            # 加载 mc 模型 识别图像信息
             
-            
-            
-            
-            
-            if args.saveimagesteps > 0 and steps % args.saveimagesteps == 0:
-                h, w, d = env.observation_space.shape
-                img = Image.fromarray(obs.reshape(h, w, d))
-                img.save('image' + str(args.role) + '_' + str(steps) + '.png')
+
 
             time.sleep(.05)
 

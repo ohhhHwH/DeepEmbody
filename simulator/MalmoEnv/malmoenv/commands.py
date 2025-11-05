@@ -121,7 +121,9 @@ class CommandParser:
                 #  Translate to discrete.
                 if verb in {"move", "strafe", "pitch", "turn"}:
                     actions.append(verb + " 1")
+                    actions.append(verb + " 0")
                     actions.append(verb + " -1")
+                    actions_type.append(type)
                     actions_type.append(type)
                     actions_type.append(type)
                 elif verb in {"crouch", "jump", "attack", "use"}:
