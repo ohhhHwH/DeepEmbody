@@ -4,9 +4,9 @@ import asyncio
 from mcp.server.fastmcp import FastMCP
 
 
-
-from hi_api import *
-from hello2_api import *
+from example_api import *
+# from hi_api import *
+# from hello2_api import *
 
 if __name__ == "__main__":
     # init and run server

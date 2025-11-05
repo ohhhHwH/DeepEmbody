@@ -35,7 +35,7 @@ def api_get_hi_status() -> str:
         None
     """
     func_status = "hi api_get_hi_status call ok"
-
+    print(func_status)
     return func_status
 
 def api_change_hi(name: str) -> str:
@@ -44,6 +44,7 @@ def api_change_hi(name: str) -> str:
         name: 新的hi名称
     """
     func_status = "hi api_change_hi call ok"
+    print(f"hi name changed to {name}")
     return func_status
 
 def api_close_hi() -> str:
@@ -52,4 +53,5 @@ def api_close_hi() -> str:
         None
     """
     func_status = "hi api_close_hi call ok"
+    print("hi node closed")
     return func_status
