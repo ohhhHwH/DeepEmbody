@@ -1,49 +1,55 @@
-Query: get a cup of milk
+Query: Based on the current scene, 找到水源
 
-0.7580	 pour milk into the cup
-0.7305	 take out the milk
-0.5795	 deliver the milk to the user
-0.5722	 pick up the cup
-0.5655	 dispose of the milk
-0.5456	 clean the cup
-0.5394	 heat the milk (microwave)
-0.5058	milk is expired
-0.4830	milk service process
-0.4555	milk is not expired
-0.4509	home refrigerator (with milk inside)
-0.4444	 check if the milk is expired
-0.4290	 dispose of the expired milk
-0.4244	clean cup (empty)
-0.3761	unopened milk carton
-0.3115	 walk to the sink
-0.2882	 walk to the fridge
-0.2825	 open the fridge door
-0.2046	start charging
-0.1850	 walk to the kitchen trash can
-0.1688	 open the trash can lid
-0.1382	Skill: cap_space_getpos, Type: , Input: {}, Output: {}, Dependencies: []
-0.1382	Skill: cap_space_getpos, Type: , Input: {}, Output: {}, Dependencies: []
-0.1382	Skill: cap_space_getpos, Type: , Input: {}, Output: {}, Dependencies: []
-0.1335	 clean the dust off the broom
-0.1334	as embody ai assistant
-0.1237	Skill: cap_get_robot_pose, Type: , Input: {}, Output: {}, Dependencies: []
-0.1205	dock to the charging station
-0.1118	Skill: cap_camera_dep_rgb, Type: , Input: {}, Output: {}, Dependencies: []
-0.1025	Space node for camera at /robot/camera
-0.1011	kitchen scene (with fridge, sink, dining table)
-0.0989	Skill: cap_save_rgb_image, Type: , Input: {}, Output: {}, Dependencies: []
-0.0988	 close the trash can lid
-0.0913	Skill: cap_camera_info, Type: , Input: {}, Output: {}, Dependencies: []
-0.0868	Skill: cap_save_depth_image, Type: , Input: {}, Output: {}, Dependencies: []
-0.0752	Skill: cap_space_move, Type: , Input: {}, Output: {}, Dependencies: []
-0.0701	Space node for robot at /robot
-0.0578	Space node for / at /
-0.0548	cleaning skill
-0.0539	charging process
-0.0489	Space node for move_base at /robot/move_base
-0.0474	Skill: skl_detect_objs, Type: , Input: {}, Output: {}, Dependencies: []
-0.0383	Space node for chair at /chair
-0.0275	Root of the memory graph
-0.0167	 navigate to the charging dock
-0.0083	 start sweeping mode
--0.0558	Space node for courtyard at /courtyard
+0.0856	Skill: jumpnorth:14:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0856	Skill: jumpnorth:14:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0816	Skill: jump:18:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0816	Skill: jump:18:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0786	Skill: jumpuse:23:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0786	Skill: jumpuse:23:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0782	Skill: movenorth:10:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0782	Skill: movenorth:10:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0731	Skill: look:19:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0731	Skill: look:19:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0714	Skill: turn:8:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0714	Skill: turn:8:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0703	Skill: turn:9:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0703	Skill: turn:9:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0700	Skill: move:1:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0700	Skill: move:1:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0697	Skill: jumpmove:3:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0697	Skill: jumpmove:3:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0693	Skill: move:0:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0693	Skill: move:0:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0691	Skill: movewest:13:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0691	Skill: movewest:13:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0684	Skill: movesouth:12:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0684	Skill: movesouth:12:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0672	Skill: jumpeast:15:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0672	Skill: jumpeast:15:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0671	Skill: look:20:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0671	Skill: look:20:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0661	Skill: jumpwest:17:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0661	Skill: jumpwest:17:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0624	Skill: jumpmove:2:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0624	Skill: jumpmove:2:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0529	Skill: moveeast:11:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0529	Skill: moveeast:11:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0525	Skill: jumpsouth:16:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0525	Skill: jumpsouth:16:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0517	Skill: jumpstrafe:6:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0517	Skill: jumpstrafe:6:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0496	Skill: jumpstrafe:7:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0496	Skill: jumpstrafe:7:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0450	Skill: attack:21:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0450	Skill: attack:21:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0396	Skill: use:22:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0396	Skill: use:22:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0225	Skill: strafe:5:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0225	Skill: strafe:5:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0217	Root of the memory graph
+0.0161	Skill: strafe:4:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0161	Skill: strafe:4:discretemovement, Type: , Input: {}, Output: {}, Dependencies: []
+0.0088	Space node for robot at /robot
+0.0088	Space node for robot at /robot
+0.0040	Space node for / at /
+0.0040	Space node for / at /

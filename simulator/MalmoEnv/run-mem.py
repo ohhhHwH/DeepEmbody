@@ -46,21 +46,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str("/home/hyl/robonix"))
 from vlm_detect import test3_kimi
+from memory.memory_module import CurrentState
+import xml.etree.ElementTree as ET
+from pathlib import Path
+"""
+从 Mission XML（字符串或文件路径）解析 ObservationFromGrid 中 Grid 的 min/max 范围。
+参数:
+    - source: XML 字符串或 pathlib.Path/文件路径字符串
+    - grid_name: 可选，指定 Grid 的 name 属性，若为 None 返回第一个匹配的 Grid
+返回:
+    - dict: {'name': str, 'min': (xmin,ymin,zmin), 'max': (xmax,ymax,zmax)}
+    - 若未找到返回 None
+"""
 
 def get_observation_grid_range(source, grid_name=None):
-    """
-    从 Mission XML（字符串或文件路径）解析 ObservationFromGrid 中 Grid 的 min/max 范围。
-    参数:
-      - source: XML 字符串或 pathlib.Path/文件路径字符串
-      - grid_name: 可选，指定 Grid 的 name 属性，若为 None 返回第一个匹配的 Grid
-    返回:
-      - dict: {'name': str, 'min': (xmin,ymin,zmin), 'max': (xmax,ymax,zmax)}
-      - 若未找到返回 None
-    """
-    import xml.etree.ElementTree as ET
-    from pathlib import Path
-
-    # 载入 xml 文本
+    # 载入 xml 文本aaaaaaa
     if isinstance(source, (str, Path)) and Path(source).exists():
         xml_text = Path(source).read_text()
     else:
@@ -163,6 +163,126 @@ def save_img(obs, env):
     else:
         print("当前观测中没有深度通道")
 
+# 加入 memory
+# 根据info来更新 memory
+# 将所有可用技能转换成 json 格式 == scene_info
+def mc_cap2scene_info(actions, actions_type, grid_info=None):
+    skills = []
+    skill_specs = {}
+
+    # 遍历动作，生成 capability 名称
+    for i, (act, act_type) in enumerate(zip(actions, actions_type, )):
+        if act is None:
+            act = f"action_{i}"
+        act_clean = str(act).strip()
+        base = act_clean.split()[0] if len(act_clean.split()) > 0 else f"action{i}"
+        # 规范化名称："`Action index`:`action`:`Action Type`"
+        
+        # cap_name = f"{base}:{i}:{act_type}".replace(" ", "_").replace("-", "neg").replace(".", "_").lower()
+        cap_name = f"{base}:{i}:{act_type}".lower()
+        
+        # 保证唯一
+        if cap_name in skills:
+            suffix = 1
+            while f"{cap_name}_{suffix}" in skills:
+                suffix += 1
+            cap_name = f"{cap_name}_{suffix}"
+        skills.append(cap_name)
+
+        # 生成简单的 skill_spec
+        skill_specs[cap_name] = {
+            "description": f"action '{act_clean}' and {act_type}",
+            "type": "capability",
+            "input": None,
+            "output": None,
+            "dependencies": []
+        }
+
+    # 构造 entity_graph（简化版，与 scene_data.json 风格一致）
+    entity_graph = {
+        "entities": {
+            "/": {
+                "name": "/",
+                "parent": "",
+                "children": ["/entity", "/temp"]
+            },
+            "/temp": {
+                "name": "temp",
+                "parent": "/",
+                "children": []
+            },
+            "/entity": {
+                "name": "entity",
+                "parent": "/",
+                "children": ["/entity/camera"]
+            },
+            "/entity/camera": {
+                "name": "camera",
+                "parent": "/entity",
+                "children": []
+            },
+            # "/entity/radar": {
+            #     "name": "radar",
+            #     "parent": "/entity",
+            #     "children": []
+            # }, # grid_info
+        },
+        "skills": {
+            "/": [],
+            "/entity": skills
+        },
+        "graph_structure": {
+            "name": "/",
+            "path": "/",
+            "skills": [],
+            "children": {
+                "robot": {
+                    "name": "robot",
+                    "path": "/robot",
+                    "skills": skills,
+                    "children": {}
+                }
+            }
+        }
+
+
+    }
+
+    scene_info = {
+        "entity_graph": entity_graph,
+        "skill_specs": {"skill_specs": skill_specs}
+    }
+    
+    print(scene_info)
+    # 写入 scene_info.json
+    with open("scene_info.json", "w") as f:
+        json.dump(scene_info, f, indent=4)
+    
+
+    return scene_info
+
+
+# 记录临时记忆-空间 更新 entity_graph
+def record_short_space_memory(scene_info, obj_list):
+    # 更新 entity_graph
+    entity_graph = scene_info.get("entity_graph", {})
+    if not entity_graph:
+        return
+    # 将物体作为 entities/temp 的 孩子 添加到 /temp 下
+    for obj in obj_list:
+        obj_name = obj.get('name', 'unknown')
+        obj_entity_path = f"/temp/{obj_name}_{obj.get('x')}{obj.get('y')}{obj.get('z')}"
+        entity_graph["entities"][obj_entity_path] = {
+            "name": obj_name,
+            "parent": "/temp",
+            "children": []
+        }
+        # 将该物体添加到 /temp 的 children 中
+        entity_graph["entities"]["/temp"]["children"].append(obj_entity_path)
+    
+    return scene_info
+    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='malmovnv test')
@@ -187,14 +307,19 @@ if __name__ == '__main__':
     env = malmoenv.make()
     
     # 添加 动作过滤器 所有动作都在这个范围内
-    # action_filter = {"move", "turn", "use", "attack"}
-    action_filter = {"move", "jumpmove", "strafe", "jumpstrafe", "turn", "movenorth", "moveeast",
-                    "movesouth", "movewest", "jumpnorth", "jumpeast", "jumpsouth", "jumpwest",
-                    "jump", "look", "attack", "use", "jumpuse"}
+    action_filter = {"move", "turn", "jump", "look", "jumpmove"}
+    # action_filter = {"move", "jumpmove", "strafe", "jumpstrafe", "turn", "movenorth", "moveeast",
+    #                 "movesouth", "movewest", "jumpnorth", "jumpeast", "jumpsouth", "jumpwest",
+    #                 "jump", "look", "attack", "use", "jumpuse"}
     
     # 获取 xml 中ObservationFromGrid的 around 范围
     around_range = get_observation_grid_range(args.mission, grid_name='around')
     print(f"Around range from XML: {around_range}")
+    
+    # 排除的物体
+    exfilter = {"air", "water", "leaves2", "stone", "grass", "dirt", "sand"}
+    
+    
 
     # 将xml中内容传入并接卸
     env.init(xml, args.port,
@@ -205,6 +330,10 @@ if __name__ == '__main__':
              episode=args.episode,
              action_filter=action_filter,
              resync=args.resync)
+    
+    cs = CurrentState()
+    skills_memory = mc_cap2scene_info(env.actions, env.actions_type, around_range)
+    cs.init_Scene(skills_memory)
 
     # 在当前目录下创建log文件夹，并获取当前时间作为log文件名
     log_dir = Path('log')
@@ -252,19 +381,15 @@ if __name__ == '__main__':
             
             
         # ADD : 获取用户指令
-        user_request = ''
+        user_request = '找到水源'
         # user_request = input("Press Enter to continue, or type 'exit' to quit: ")
         if user_request.lower() == 'exit':
             print("Exiting the experiment.")
             break
         else:
             print("Continuing the experiment.")
-            
-            
 
         # add : 根据 env.actions 建立 Graph
-        
-
         steps = 0
         done = False
         while not done and (args.episodemaxsteps <= 0 or steps < args.episodemaxsteps):
@@ -363,5 +488,16 @@ if __name__ == '__main__':
                 f.write('info: ' + str(info) + '\n')
                 f.write('detected objects:'+str(obj_list)+'\n')
                 f.write('-------------------------\n')
-                
+            
+            # 根据 obj_list 更新 memory
+            scene_info = record_short_space_memory(skills_memory, obj_list)
+            cs.update_Scene(scene_info)
+            
+            # 通过 memory 进行检索
+            retrieval_Request = f"Based on the current scene, {user_request}"
+            retrieval_Results = cs.retrieval_Request(retrieval_Request, top_k=5)
+            
+            # 将 graph 保存至json并可视化 
+            cs.memory_graph.save_to_file("current_memory_graph.json")
+            cs.memory_graph.visualize("current_memory_graph.png")
     env.close()

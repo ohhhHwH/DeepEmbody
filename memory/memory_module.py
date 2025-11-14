@@ -450,8 +450,12 @@ class CurrentState:
             # print("\n\n")
             
             # Create a space node
+            # 如果名称中含有 /temp/ 则 node_type 设置为 SHORT_TERM
+            node_type = NodeType.FIXED
+            if "/temp/" in path:
+                node_type = NodeType.SHORT_TERM
             space_node_id = self.memory_graph.add_node(
-                node_type=NodeType.FIXED,
+                node_type=node_type,
                 node_class=NodeClass.SPACE,
                 name=name,
                 summary=f"Space node for {name} at {path}",
@@ -544,9 +548,10 @@ class CurrentState:
                         child_cnt=child_cnt, parents_cnt=parents_cnt)
             skill_info_id_list[idx] = cur_node_id
     
-    # TODO update scene
+    # update scene
     def update_Scene(self, scene_info: dict):
-        pass
+        # 目前将所有scene信息重新初始化
+        self.init_Scene(scene_info)
     
     # 场景所有信息更新到memory/data/retrieval_memory.json中
     def update_retrieval(self):
@@ -634,80 +639,7 @@ def test():
     #cs.memory_graph.visualize("memory/data/current_memory_graph.png")
     
 
-class CurrentState:
-    def __init__(self, init_memory_graph: str = "basic_memory_graph.json"):
-        
-        self.memory_graph = MemoryGraph()
-        self.memory_graph.load_from_file(init_memory_graph)
-        
-        self.current_space = ""
-        
-        # query : get CA weathering information
-        # [    
-        #     {
-        #         "name": "get_alerts",
-        #         "args": {
-        #             "state": "CA"
-        #         }
-        #     }
-        # ]
-        
-    def funcall2node(self, query : str, tool_calls : list) -> MemoryNode:
-        
-        # query 作为情景节点 - 短时间记忆
-        query_node_id = self.memory_graph.add_node(
-            node_type=NodeType.SHORT_TERM,
-            node_class=NodeClass.CONTEXT,
-            name=query,
-            summary="",
-            parent_id=-1,  # No parent for the root context node
-            weight=1.0,
-            child_cnt=len(tool_calls),
-            parents_cnt=0,
-            timestamp=np.datetime64('now')  # Current time as timestamp
-        )
-        # tool calls 作为情景节点下面的子时间节点 - 参数中带name的作为时间节点下的空间节点
-        for tool_call in tool_calls:
-            tool_name = tool_call.get("name", "")
-            tool_args = tool_call.get("args", {})
-            # Create a time node for each tool call
-            time_node_id = self.memory_graph.add_node(
-                node_type=NodeType.SHORT_TERM,
-                node_class=NodeClass.TIME,
-                name=tool_name,
-                summary=str(tool_args),
-                parent_id=query_node_id,  # Parent is the query context node
-                weight=1.0,
-                child_cnt=0,  # No children for now
-                parents_cnt=1,  # One parent (the query context node)
-            )
-            # Add the tool call as a child of the query context node
-            self.memory_graph.add_child(query_node_id, time_node_id)
 
-            # 解析args参数，提取地点信息
-            if "name" in tool_args:
-                name = tool_args["name"]
-                # Create a spatial node for the state
-                space_node_id = self.memory_graph.add_node(
-                    node_type=NodeType.SHORT_TERM,
-                    node_class=NodeClass.SPACE,
-                    name=name,
-                    summary=f"State information for {name}",
-                    parent_id=time_node_id,  # Parent is the time node
-                    weight=1.0,
-                    child_cnt=0,  # No children for now
-                    parents_cnt=1,  # One parent (the time node)
-                )
-                # Add the spatial node as a child of the time node
-                self.memory_graph.add_child(time_node_id, space_node_id)
-            
-            
-        # 地点参数等信息作为时间节点下关联的空间节点
-        
-
-        
-        
-        pass
         
         
 def main():

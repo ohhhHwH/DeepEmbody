@@ -9,7 +9,6 @@ import time
 
 class ActionAgent:
 
-        
     def __init__(self, env=None, action_filter=None):
         self.env = env
         self.actions = env.actions
