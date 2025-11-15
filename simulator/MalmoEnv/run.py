@@ -115,8 +115,27 @@ def info_observation_grid_range(around, grid_range):
         start_idx = y * layer_size
         end_idx = start_idx + layer_size
         layer = around[start_idx:end_idx]
+        
+        
+        # 将 layer 转换 floor3x3: ['lava', 'obsidian', 'obsidian', 'lava', 'obsidian', 'obsidian', 'lava', 'obsidian', 'obsidian']
+        '''
+        increasing z
+        |       0 1 2
+        |       3 4 5
+        |       6 7 8 
+        |-----> increasing x
+        '''
+        # 切分 x z 层 为二维列表
+        layer_2d = []
+        for x in range(x_size):
+            row = layer[x * z_size:(x + 1) * z_size]
+            layer_2d.insert(0, row)
+        # 打印 layer_2d
+        # print("layer_2d:", layer_2d)
+        
         # 在前面插入
-        around_layers.insert(0, layer)
+        around_layers.insert(0, layer_2d)
+        
     return around_layers
 
 def save_img(obs, env):
@@ -318,7 +337,9 @@ if __name__ == '__main__':
             # 打印出 info 字典的 around 信息
             around = info.get('around', None)
             around = info_observation_grid_range(around, around_range)
-            print("info around: " + str(around))
+            print("info around: " )
+            for layer in around:
+                print(layer, "len:", len(layer))
             # 获取entities -> list 打印 xyz yaw pitch
             entities = info.get('entities', [])
             for entity in entities:
@@ -333,35 +354,36 @@ if __name__ == '__main__':
             save_img(obs, env)
             
             # 加载 mc 模型 识别图像信息
-            test3_kimi()
+            # test3_kimi()
             
             # 读取json文件打印识别到的物体和深度信息
-            json_output_path = "detection_output_kimi.json"
-            obj_list = []
-            with open(json_output_path, 'r', encoding='utf-8') as json_file:
-                detection_data = json.load(json_file) # detection_data 是一个列表
-                print("Detected objects and their depth information:")
-                # for obj in detection_data.get('objects', []): 
-                for obj in detection_data:
-                    name = obj.get('label', 'unknown')
-                    depth = obj.get('depth', 'unknown')
-                    print(f"Object: {name}, Depth: {depth}")
-                    # 根据当前xy值和识别到的物体深度计算物体的绝对位置-粗略的-后续根据“雷达”信息精确定位
-                    obj_list.append(
-                        {
-                            'name': name,
-                            'depth': depth,
-                            'x': entity.get('x'),
-                            'y': entity.get('y'),
-                            'z': entity.get('z')
-                        }
-                    )
+            # json_output_path = "detection_output_kimi.json"
+            # obj_list = []
+            # with open(json_output_path, 'r', encoding='utf-8') as json_file:
+            #     detection_data = json.load(json_file) # detection_data 是一个列表
+            #     print("Detected objects and their depth information:")
+            #     # for obj in detection_data.get('objects', []): 
+            #     for obj in detection_data:
+            #         name = obj.get('label', 'unknown')
+            #         depth = obj.get('depth', 'unknown')
+            #         print(f"Object: {name}, Depth: {depth}")
+            #         # 根据当前xy值和识别到的物体深度计算物体的绝对位置-粗略的-后续根据“雷达”信息精确定位
+            #         obj_list.append(
+            #             {
+            #                 'name': name,
+            #                 'depth': depth,
+            #                 'x': entity.get('x'),
+            #                 'y': entity.get('y'),
+            #                 'z': entity.get('z')
+            #             }
+            #         )
+
             # 将以上信息写入action.log 图像存入 malmo_obs.png
             with open(log_file, 'a') as f:
                 f.write('reward: ' + str(reward) + '\n')
                 f.write('done: ' + str(done) + '\n')
                 f.write('info: ' + str(info) + '\n')
-                f.write('detected objects:'+str(obj_list)+'\n')
+                # f.write('detected objects:'+str(obj_list)+'\n')
                 f.write('-------------------------\n')
                 
     env.close()

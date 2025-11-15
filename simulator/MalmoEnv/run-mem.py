@@ -115,8 +115,27 @@ def info_observation_grid_range(around, grid_range):
         start_idx = y * layer_size
         end_idx = start_idx + layer_size
         layer = around[start_idx:end_idx]
+        
+        
+        # 将 layer 转换 floor3x3: ['lava', 'obsidian', 'obsidian', 'lava', 'obsidian', 'obsidian', 'lava', 'obsidian', 'obsidian']
+        '''
+        increasing z
+        |       0 1 2
+        |       3 4 5
+        |       6 7 8 
+        |-----> increasing x
+        '''
+        # 切分 x z 层 为二维列表
+        layer_2d = []
+        for x in range(x_size):
+            row = layer[x * z_size:(x + 1) * z_size]
+            layer_2d.insert(0, row)
+        # 打印 layer_2d
+        # print("layer_2d:", layer_2d)
+        
         # 在前面插入
-        around_layers.insert(0, layer)
+        around_layers.insert(0, layer_2d)
+        
     return around_layers
 
 def save_img(obs, env):
@@ -261,17 +280,25 @@ def mc_cap2scene_info(actions, actions_type, grid_info=None):
 
     return scene_info
 
-
 # 记录临时记忆-空间 更新 entity_graph
-def record_short_space_memory(scene_info, obj_list):
+def record_short_space_memory(scene_info, obj_list, entity):
     # 更新 entity_graph
     entity_graph = scene_info.get("entity_graph", {})
     if not entity_graph:
         return
+    # 根据 entities 获取当前实体位置
+    if not entities:
+        return scene_info
+    
+
     # 将物体作为 entities/temp 的 孩子 添加到 /temp 下
     for obj in obj_list:
         obj_name = obj.get('name', 'unknown')
-        obj_entity_path = f"/temp/{obj_name}_{obj.get('x')}{obj.get('y')}{obj.get('z')}"
+        obj_x = obj.get('x', 0)
+        obj_y = obj.get('y', 0)
+        obj_z = obj.get('z', 0) 
+        # 生成唯一路径
+        obj_entity_path = f"/temp/{obj_name}_{int(obj_x)}_{int(obj_y)}_{int(obj_z)}"
         entity_graph["entities"][obj_entity_path] = {
             "name": obj_name,
             "parent": "/temp",
@@ -282,6 +309,38 @@ def record_short_space_memory(scene_info, obj_list):
     
     return scene_info
     
+def short2long_space_memory(entity, around, scene_info):
+    # 根据 当前 x y z 判定当前位置，并根据around信息更新精确坐标,从scene_info中获取 entity_graph中的 /temp 下的物体 根据坐标和 around 信息更新物体的精确位置
+    if not entity or around is None or scene_info is None:
+        return scene_info
+    entity_graph = scene_info.get("entity_graph", {})
+    if not entity_graph:
+        return scene_info
+    # 取第一个 entity 作为参考
+    ref_entity = entity
+    ref_x = ref_entity.get('x', 0)
+    ref_y = ref_entity.get('y', 0)
+    ref_z = ref_entity.get('z', 0) 
+    # 遍历 /temp 下的物体
+    temp_children = entity_graph["entities"].get("/temp", {}).get("children", [])
+    for temp_entity_path in temp_children:
+        temp_entity = entity_graph["entities"].get(temp_entity_path, {})
+        temp_name = temp_entity.get("name", "unknown")
+        # 假设物体名中包含相对位置 如 tree_1_0_2 表示相对于参考实体偏移 (1,0,2)
+        parts = temp_name.split('_')
+        if len(parts) >= 4:
+            try:
+                offset_x = int(parts[-3])
+                offset_y = int(parts[-2])
+                offset_z = int(parts[-1])
+                # 计算精确位置
+                precise_x = ref_x + offset_x
+                precise_y = ref_y + offset_y
+                precise_z = ref_z + offset_z
+                # 更新实体信息
+                temp_entity['precise_position'] = (precise_x, precise_y, precise_z)
+            except ValueError:
+                continue
 
 if __name__ == '__main__':
 
@@ -318,8 +377,6 @@ if __name__ == '__main__':
     
     # 排除的物体
     exfilter = {"air", "water", "leaves2", "stone", "grass", "dirt", "sand"}
-    
-    
 
     # 将xml中内容传入并接卸
     env.init(xml, args.port,
@@ -332,8 +389,8 @@ if __name__ == '__main__':
              resync=args.resync)
     
     cs = CurrentState()
-    skills_memory = mc_cap2scene_info(env.actions, env.actions_type, around_range)
-    cs.init_Scene(skills_memory)
+    scene_info = mc_cap2scene_info(env.actions, env.actions_type, around_range)
+    cs.init_Scene(scene_info)
 
     # 在当前目录下创建log文件夹，并获取当前时间作为log文件名
     log_dir = Path('log')
@@ -444,8 +501,12 @@ if __name__ == '__main__':
             around = info.get('around', None)
             around = info_observation_grid_range(around, around_range)
             print("info around: " + str(around))
+            
             # 获取entities -> list 打印 xyz yaw pitch
             entities = info.get('entities', [])
+            # 根据 历史信息和around 获取精确坐标
+            long_term_space = short2long_space_memory(entities, around, scene_info)
+
             for entity in entities:
                 print(f"xyz: ({entity.get('x')}, {entity.get('y')}, {entity.get('z')})")
                 print(f"yaw: {entity.get('yaw')}")
@@ -476,6 +537,8 @@ if __name__ == '__main__':
                         {
                             'name': name,
                             'depth': depth,
+                            # 修改识别的物体的位置-这里是模糊绝对位置 # 根据视角和深度计算相对位置
+                            # 
                             'x': entity.get('x'),
                             'y': entity.get('y'),
                             'z': entity.get('z')
@@ -490,7 +553,7 @@ if __name__ == '__main__':
                 f.write('-------------------------\n')
             
             # 根据 obj_list 更新 memory
-            scene_info = record_short_space_memory(skills_memory, obj_list)
+            scene_info = record_short_space_memory(scene_info, obj_list)
             cs.update_Scene(scene_info)
             
             # 通过 memory 进行检索

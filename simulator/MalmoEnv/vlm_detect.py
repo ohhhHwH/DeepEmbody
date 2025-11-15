@@ -17,7 +17,8 @@ import time
 from openai import OpenAI
 
 prompt_qwen3_object_detection_en = """
-you. Given an image, identify all objects present in the image and provide their details in a structured JSON format.
+You are an expert in image object detection within the pixelated game "Minecraft".
+Given an image, identify all objects present in the image and provide their details in a structured JSON format.
 Please analyze the image and return a JSON array where each element contains the following fields for each detected.
 object:
 - "id": A unique identifier for the detected
@@ -31,6 +32,7 @@ object:
   # Ensure the JSON is properly formatted and can be easily parsed.
 - "nearby:": A list of labels of objects that are in close proximity to the detected object.
 Provide only the JSON array as the output without any additional text or explanation.
+
 """
 
 prompt_qwen3_object_detection_cn = """
@@ -45,7 +47,7 @@ prompt_qwen3_object_detection_cn = """
   - "y_max"：边界框右下角的y坐标。
 - "nearby:": 一个包含与检测到的物体接近的物体标签的列表。
 仅提供JSON数组作为输出，不要添加任何额外的文本或解释。
-
+《我的世界》中的常见物体标签包括但不限于：树干、树叶、水、沙子、草地、泥土、石头、天空、云、花、矿石、冰、雪、装饰物、植物等。
 """
     
 def test1():
